@@ -9,8 +9,8 @@ const INTERVAL = 2 * 60 * 1000
 
 let known = JSON.parse(fs.readFileSync("known.json").toString())
 
-function IsCollectible(item: ICatalogItem) {
-	return item.itemRestrictions.includes("Collectible")
+function IsUGCCollectible(item: ICatalogItem) {
+	return item.itemRestrictions.includes("Collectible") && item.creatorTargetId != 1 // Exclude ROBLOX account
 }
 
 function IsKnown(item: ICatalogItem) {
@@ -84,7 +84,7 @@ async function doJob() {
 	while(items = await search.exec()) {
 		console.log("Search next page:", search.page)
 
-		let list = items.filter(x => IsCollectible(x) && !IsKnown(x))
+		let list = items.filter(x => IsUGCCollectible(x) && !IsKnown(x))
 		if(list.length == 0) {
 			await sleep(5000)
 			continue
