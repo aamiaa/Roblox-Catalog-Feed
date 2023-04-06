@@ -5,7 +5,7 @@ import CatalogSearch from "./classes/CatalogSearch"
 import ICatalogItem, { EnumAssetType } from "./interface/CatalogItem"
 import sleep from "./util/sleep"
 
-const INTERVAL = 2 * 60 * 1000
+const INTERVAL = 1 * 60 * 1000
 
 let known = JSON.parse(fs.readFileSync("known.json").toString())
 
