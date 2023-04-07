@@ -56,13 +56,18 @@ async function WebhookPost(item: ICatalogItem, thumbnailUrl: string) {
 		content: mentions.join(" "),
 		embeds: [{
 			title: item.name,
-			description: `New ${EnumAssetType[item.assetType]}`,
+			description: item.description.substring(0, 2000),
 			url: `https://roblox.com/catalog/${item.id}`,
 			color: isSmallQuantity ? 0xff2942 : 5814783,
 			fields: [
 				{
 					name: "Price",
 					value: item.price || "Free?",
+					inline: true
+				},
+				{
+					name: "Type",
+					value: EnumAssetType[item.assetType] || "Unknown",
 					inline: true
 				},
 				{
