@@ -7,7 +7,7 @@ export default class CatalogSearch {
 	private options: Record<string, string> = {}
 	private ended = false
 	public page = 0
-	public maxPage = 3
+	public maxPage = 1
 
 	constructor(options: Record<string, string>) {
 		this.options = options
