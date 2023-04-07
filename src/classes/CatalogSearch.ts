@@ -30,7 +30,7 @@ export default class CatalogSearch {
 					console.log("Ratelimit exceeded, sleeping...")
 					await sleep(30000)
 				} else {
-					console.error("Request error:", ex.response.status, ex.respose.data)
+					console.error("Request error:", ex?.response?.status, ex?.respose?.data)
 				}
 			}
 		}
