@@ -38,7 +38,7 @@ export default interface ICatalogItem {
 	assetType: EnumAssetType,
 	name: string,
 	description: string,
-	itemRestrictions: ("ThirteenPlus" | "LimitedUnique" | "Limited" | "Rthro" | "Collectible")[],
+	itemRestrictions?: ("ThirteenPlus" | "LimitedUnique" | "Limited" | "Rthro" | "Collectible")[],
 	creatorType: "User" | "Group",
 	creatorTargetId: number,
 	creatorName: string,

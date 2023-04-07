@@ -10,7 +10,7 @@ const INTERVAL = 1 * 60 * 1000
 let known = JSON.parse(fs.readFileSync("known.json").toString())
 
 function IsUGCCollectible(item: ICatalogItem) {
-	return item.itemRestrictions.includes("Collectible") && item.creatorTargetId != 1 // Exclude ROBLOX account
+	return item.itemRestrictions?.includes("Collectible") && item.creatorTargetId != 1 // Exclude ROBLOX account
 }
 
 function IsKnown(item: ICatalogItem) {
