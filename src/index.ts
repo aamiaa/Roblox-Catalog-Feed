@@ -6,6 +6,8 @@ import ICatalogItem, { EnumAssetType } from "./interface/CatalogItem"
 import sleep from "./util/sleep"
 
 const INTERVAL = 20 * 1000
+const FreeLimitedRole = process.env.FreeLimitedRole
+const SmallQuantityLimitedRole = process.env.SmallQuantityLimitedRole
 
 let known = JSON.parse(fs.readFileSync("known.json").toString())
 
@@ -41,12 +43,22 @@ async function GetThumbnails(items: ICatalogItem[]) {
 }
 
 async function WebhookPost(item: ICatalogItem, thumbnailUrl: string) {
+	let isFree = item.price === 0
+	let isSmallQuantity = item.totalQuantity <= 300
+
+	let mentions = []
+	if(isFree)
+		mentions.push(`<@&${FreeLimitedRole}>`)
+	if(isSmallQuantity)
+		mentions.push(`<@&${SmallQuantityLimitedRole}>`)
+
 	await axios.post(`https://discordapp.com/api/webhooks/${process.env.WEBHOOK_ID}/${process.env.WEBHOOK_TOKEN}`, {
+		content: mentions.join(" "),
 		embeds: [{
 			title: item.name,
 			description: `New ${EnumAssetType[item.assetType]}`,
 			url: `https://roblox.com/catalog/${item.id}`,
-			color: 5814783,
+			color: isSmallQuantity ? 0xff2942 : 5814783,
 			fields: [
 				{
 					name: "Price",
