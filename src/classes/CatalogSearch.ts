@@ -11,7 +11,7 @@ export default class CatalogSearch {
 	private options: Record<string, string> = {}
 	private ended = false
 	public page = 0
-	public maxPage = 5
+	public maxPage = 2
 	public ratelimitInterval = 30000
 	public errorInterval = 1000
 
