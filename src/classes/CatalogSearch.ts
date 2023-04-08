@@ -80,7 +80,7 @@ export default class CatalogSearch {
 
 	private async getCSRFToken(): Promise<string> {
 		return (await detailsProxy.nextAgent({
-			url: "https://auth.roblox.com/v1/usernames/validate",
+			url: "https://catalog.roblox.com/v1/catalog/items/details",
 			method: "post",
 			validateStatus: () => true
 		})).headers["x-csrf-token"]
