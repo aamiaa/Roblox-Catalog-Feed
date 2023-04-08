@@ -1,24 +1,22 @@
 import axios, { AxiosInstance } from "axios"
 import ICatalogItem from "../interface/CatalogItem"
 import sleep from "../util/sleep"
+import ProxyManager from "./ProxyManager"
+
+const searchProxy = new ProxyManager(0, 100)
+const detailsProxy = new ProxyManager(100, 200)
 
 export default class CatalogSearch {
 	private cursor = ""
 	private options: Record<string, string> = {}
 	private ended = false
 	public page = 0
-	public maxPage = 10
-	public ratelimitInterval = 1000
+	public maxPage = 5
+	public ratelimitInterval = 30000
 	public errorInterval = 1000
-
-	private axiosInstance: AxiosInstance = axios
 
 	constructor(options: Record<string, string>) {
 		this.options = options
-	}
-
-	public useAxios(axiosInstance: AxiosInstance) {
-		this.axiosInstance = axiosInstance
 	}
 
 	public async exec(): Promise<ICatalogItem[] | null> {
@@ -28,17 +26,45 @@ export default class CatalogSearch {
 		this.options.Cursor = this.cursor
 
 		let res
-		while(!res) {
+
+		let items
+		while(!items) {
 			try {
-				res = await this.axiosInstance.get("https://catalog.roblox.com/v1/search/items/details", {
+				items = await searchProxy.nextAgent.get("https://catalog.roblox.com/v1/search/items", {
 					params: this.options
 				})
 			} catch(ex) {
+				console.error("HOW IS THIS GETTING RATELIMITED????", ex?.response?.status, ex?.response?.data)
+			}
+		}
+		this.cursor = items.data.nextPageCursor
+
+		let csrfToken = await this.getCSRFToken()
+		while(!res) {
+			try {
+				console.log("Getting bulk item details", csrfToken)
+
+				res = await detailsProxy.currentAgent({
+					url: "https://catalog.roblox.com/v1/catalog/items/details",
+					method: "post",
+					headers: {
+						"Content-Type": "application/json",
+						"x-csrf-token": csrfToken
+					},
+					data: {
+						items: items.data.data
+					},
+				})
+			} catch(ex) {
 				if(ex.response.status == 429) {
-					console.log("Ratelimit exceeded, sleeping...")
-					await sleep(this.ratelimitInterval)
+					console.log("Ratelimit exceeded (HOW?)")
+					
+					csrfToken = await this.getCSRFToken()
+				} else if(ex?.response?.data?.message === "Token Validation Failed") {
+					console.log("Getting x-csrf-token:", ex.response.headers["x-csrf-token"])
+					csrfToken = ex.response.headers["x-csrf-token"]
 				} else {
-					console.error("Request error:", ex?.response?.status, ex?.respose?.data)
+					console.error("Request error:", ex?.response?.status, ex?.response?.data)
 					await sleep(this.errorInterval)
 				}
 			}
@@ -46,10 +72,17 @@ export default class CatalogSearch {
 		
 		let data = res.data
 
-		this.cursor = data.nextPageCursor
 		this.page++
-		if(data.nextPageCursor == null || this.page >= this.maxPage)
+		if(this.cursor == null || this.page >= this.maxPage)
 			this.ended = true
 		return data.data
+	}
+
+	private async getCSRFToken(): Promise<string> {
+		return (await detailsProxy.nextAgent({
+			url: "https://auth.roblox.com/v1/usernames/validate",
+			method: "post",
+			validateStatus: () => true
+		})).headers["x-csrf-token"]
 	}
 }

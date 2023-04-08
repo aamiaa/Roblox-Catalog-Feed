@@ -1,10 +1,9 @@
 import "dotenv/config"
-import axios from "axios"
 import fs from "fs"
 import CatalogSearch from "./classes/CatalogSearch"
 import ICatalogItem, { EnumAssetType } from "./interface/CatalogItem"
-import HttpsProxyAgent from "https-proxy-agent"
 import WebhookQueue from "./classes/WebhookQueue"
+import ProxyManager from "./classes/ProxyManager"
 
 const INTERVAL = 5 * 1000
 const FreeLimitedRole = process.env.FreeLimitedRole
@@ -12,14 +11,7 @@ const SmallQuantityLimitedRole = process.env.SmallQuantityLimitedRole
 
 let known = JSON.parse(fs.readFileSync("known.json").toString())
 
-const httpsAgent = HttpsProxyAgent({
-	host: process.env.ProxyHost,
-	port: process.env.ProxyPort,
-	auth: `${process.env.ProxyUsername}:${process.env.ProxyPassword}`,
-})
-const axiosInstance = axios.create({
-	httpsAgent
-})
+const thumbnailProxy = new ProxyManager(200, 250)
 
 function IsUGCCollectible(item: ICatalogItem) {
 	return item.itemRestrictions?.includes("Collectible") && item.creatorTargetId != 1 // Exclude ROBLOX account
@@ -42,7 +34,7 @@ async function GetThumbnails(items: ICatalogItem[]) {
 		return {}
 		
 	let ids = items.map(x => x.id)
-	let res = await axiosInstance.get(`https://thumbnails.roblox.com/v1/assets?assetIds=${ids.join(",")}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`)
+	let res = await thumbnailProxy.nextAgent.get(`https://thumbnails.roblox.com/v1/assets?assetIds=${ids.join(",")}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`)
 	
 	let obj: Record<string, string> = {}
 	for(let thumbnail of res.data.data) {
@@ -58,10 +50,12 @@ function WebhookPost(item: ICatalogItem, thumbnailUrl: string) {
 	let isSmallQuantity = item.totalQuantity <= 300
 
 	let mentions = []
-	if(isFree && item.unitsAvailableForConsumption > 0)
-		mentions.push(`<@&${FreeLimitedRole}>`)
-	if(isSmallQuantity)
-		mentions.push(`<@&${SmallQuantityLimitedRole}>`)
+	if(item.unitsAvailableForConsumption > 0) {
+		if(isFree)
+			mentions.push(`<@&${FreeLimitedRole}>`)
+		if(isSmallQuantity)
+			mentions.push(`<@&${SmallQuantityLimitedRole}>`)
+	}
 
 	whQueue.push({
 		content: mentions.join(" "),
@@ -106,11 +100,11 @@ let turns = [
 	},
 	{
 		salesTypeFilter: "1",
-		Keyword: "white cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black red limited blue yellow green purple test hat silver horns headphones mask crown fedora coin fedora pink red orange yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald chain blue deep expensive furry hood currency coin royal navy ocean air white cyber ugc verified black purple yellow violet description dark bright rainbow pink cyber roblox multicolor light gradient grey tags animation thigh highs socks femby tomboy girly boy reddishwhite cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald anyone hand facemask bear catboy princess prince king ariana grande tags animation thigh highs socks femby tomboy girly boy reddish pokemon yugioh initial "
+		Keyword: "golden diamond platinum white cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black red limited blue yellow green purple test hat silver horns headphones mask crown fedora coin fedora pink red orange yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald chain blue deep expensive furry hood currency coin royal navy ocean air white cyber ugc verified black purple yellow violet description dark bright rainbow pink cyber roblox multicolor light gradient grey tags animation thigh highs socks femby tomboy girly boy reddishwhite cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald anyone hand facemask bear catboy princess prince king ariana grande tags animation thigh highs socks femby tomboy girly boy reddish pokemon yugioh initial headset glasses goggles shoulder leg sock shoe knife food pet animal dog cat hoodie antlers sparkle time shades glass pants mouth ring nose hair egg"
 	},
 	{
 		salesTypeFilter: "2",
-		Keyword: "white cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black red limited blue yellow green purple test hat silver horns headphones mask crown fedora coin fedora pink red orange yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald chain blue deep expensive furry hood currency coin royal navy ocean air white cyber ugc verified black purple yellow violet description dark bright rainbow pink cyber roblox multicolor light gradient grey tags animation thigh highs socks femby tomboy girly boy reddishwhite cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald anyone hand facemask bear catboy princess prince king ariana grande tags animation thigh highs socks femby tomboy girly boy reddish pokemon yugioh initial "
+		Keyword: "golden diamond platinum white cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black red limited blue yellow green purple test hat silver horns headphones mask crown fedora coin fedora pink red orange yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald chain blue deep expensive furry hood currency coin royal navy ocean air white cyber ugc verified black purple yellow violet description dark bright rainbow pink cyber roblox multicolor light gradient grey tags animation thigh highs socks femby tomboy girly boy reddishwhite cap wings facemask card shiny tail skull king queen troll ruby money old rose unicorn huge red head man big cute rusher coin silver time money rich gold pink black yellow green blue purple black brown white gray test hat rainboworange teal cyan red green topaz yellow wings maroon space dominus lime mask mossy wooden crimson salmon brown pastel  ruby diamond creatorname follow catalog link rare emerald anyone hand facemask bear catboy princess prince king ariana grande tags animation thigh highs socks femby tomboy girly boy reddish pokemon yugioh initial headset glasses goggles shoulder leg sock shoe knife food pet animal dog cat hoodie antlers sparkle time shades glass pants mouth ring nose hair egg"
 	}
 ]
 let currentTurn = -1
@@ -122,14 +116,12 @@ async function doJob() {
 		Category: "11",
 		SortType: "3",
 		SortAggregation: "1",
-		Limit: "30"
+		Limit: "120"
 	}
 	for(let key in turns[currentTurn])
 		searchData[key] = turns[currentTurn][key]
 
 	let search = new CatalogSearch(searchData)
-	search.useAxios(axiosInstance)
-
 	try {
 		let items: ICatalogItem[] | null
 
